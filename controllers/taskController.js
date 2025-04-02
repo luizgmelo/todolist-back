@@ -1,11 +1,11 @@
 import TaskService from '../services/taskService.js';
 
-const listTasks = (req, res) => {
-    return TaskService.listAll((err, rows) => {
+const listTasks = (_, res) => {
+    return TaskService.listTasks((err, rows) => {
         if (err) {
             return res.status(500).json({ message: err.message });
         }
-        res.json(rows);
+        return res.json(rows);
     });
 };
 
@@ -15,7 +15,7 @@ const createTask = (req, res) => {
         if (err) {
             return res.status(400).json({ error: err.message });
         }
-        return res.status(201).json({ id, description, status: 'INCOMPLETE' });
+        return res.status(201).json({ id, description, status: 0 });
     });
 };
 
@@ -23,30 +23,34 @@ const updateTask = (req, res) => {
     const { id } = req.params;
     const { description, status } = req.body;
 
-    TaskService.updateTask(id, description, status, (err, changes) => {
+    TaskService.updateTask(id, description, status, (err, updatedTask) => {
 
         if (err) {
             return res.status(500).json({ error: err.message });
         }
 
-        if (changes > 1) {
-            // TODO -> Retornar a tarefa atualizada
-            return res.json({ message: 'Tarefa atualizada com sucesso' });
-        } else {
+        if (!updatedTask) {
             return res.status(404).json({ message: "Task not found!" });
         }
+
+        return res.json(updatedTask);
     });
 };
 
 const deleteTask = (req, res) => {
     const { id } = req.params;
-    const index = tasks.findIndex(task => task.id === parseInt(id));
-    if (index !== -1) {
-        tasks.splice(index, 1);
+
+    TaskService.deleteTask(id, (err, changes) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (changes === 0) {
+            return res.status(404).json({ message: "Task not found!" })
+        }
+
         return res.json({ message: "Task delete successfully" });
-    } else {
-        return res.status(404).json({ message: "Task not found!" });
-    }
+    });
 };
 
 export default { listTasks, createTask, updateTask, deleteTask };

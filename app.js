@@ -1,6 +1,7 @@
 import express from 'express';
 import taskRoutes from './routes/taskRoutes.js';
 import './config/db.js';
+import './config/dbSetup.js';
 
 const app = express();
 

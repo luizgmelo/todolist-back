@@ -1,8 +1,8 @@
-import TaskRepository from "../models/taskModel"
+import TaskRepository from "../repository/taskRepository.js";
 
-const TarefaService = {
-    listTasks: () => {
-        return TaskRepository.listAll();
+const taskService = {
+    listTasks: (callback) => {
+        return TaskRepository.listAll(callback);
     },
 
     getById: (id, callback) => {
@@ -13,14 +13,16 @@ const TarefaService = {
         if (!description) {
             return callback({ message: "Descrição é obrigatória" }, null);
         }
-        TaskRepository.create(description, callback)
+        return TaskRepository.create(description, callback)
     },
 
     updateTask: (id, description, status, callback) => {
-        TaskRepository.update(description, status, callback);
+        return TaskRepository.update(id, description, status, callback);
     },
 
-    deleteTask: (id) => {
-        TaskRepository.delete(id);
+    deleteTask: (id, callback) => {
+        return TaskRepository.delete(id, callback);
     }
 }
+
+export default taskService;

@@ -5,25 +5,31 @@ const listTasks = (_, res) => {
         if (err) {
             return res.status(500).json({ message: err.message });
         }
-        return res.json(rows);
+
+        const tasks = rows.map(task => ({
+            ...task,
+            isCompleted: Boolean(task.isCompleted)
+        }));
+
+        return res.json(tasks);
     });
 };
 
 const createTask = (req, res) => {
-    const { description } = req.body;
-    TaskService.createTask(description, (err, id) => {
+    const { title } = req.body;
+    TaskService.createTask(title, (err, id) => {
         if (err) {
             return res.status(400).json({ error: err.message });
         }
-        return res.status(201).json({ id, description, status: 0 });
+        return res.status(201).json({ id, title, status: 0 });
     });
 };
 
 const updateTask = (req, res) => {
     const { id } = req.params;
-    const { description, status } = req.body;
+    const { title, status } = req.body;
 
-    TaskService.updateTask(id, description, status, (err, updatedTask) => {
+    TaskService.updateTask(id, title, status, (err, updatedTask) => {
 
         if (err) {
             return res.status(500).json({ error: err.message });

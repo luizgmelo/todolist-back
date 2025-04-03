@@ -4,8 +4,8 @@ const taskRepository = {
     listAll: (callback) => {
         db.all('SELECT * FROM tasks', [], callback);
     },
-    create: (description, callback) => {
-        db.run('INSERT INTO tasks (description) VALUES (?)', [description],
+    create: (title, callback) => {
+        db.run('INSERT INTO tasks (title) VALUES (?)', [title],
             function(err) {
                 callback(err, this?.lastID);
             });
@@ -18,7 +18,7 @@ const taskRepository = {
             const newStatus = status !== undefined ? status : row.status;
 
             db.run(
-                'UPDATE tasks SET description=?, status=? WHERE id = ?', [description, newStatus, id],
+                'UPDATE tasks SET title=?, isCompleted=? WHERE id = ?', [description, newStatus, id],
                 function(err) {
                     if (err) {
                         return callback(err, null);

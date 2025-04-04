@@ -11,13 +11,13 @@ const taskService = {
 
     createTask: (title, callback) => {
         if (!title) {
-            return callback({ message: "Descrição é obrigatória" }, null);
+            return callback({ message: "Titulo é obrigatório" }, null);
         }
         return TaskRepository.create(title, callback)
     },
 
-    updateTask: (id, title, isCompleted, callback) => {
-        return TaskRepository.update(id, title, isCompleted, callback);
+    updateTask: (taskData, callback) => {
+        return TaskRepository.update(taskData, callback);
     },
 
     deleteTask: (id, callback) => {

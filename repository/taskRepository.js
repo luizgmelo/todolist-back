@@ -7,31 +7,58 @@ const taskRepository = {
     create: (title, callback) => {
         db.run('INSERT INTO tasks (title) VALUES (?)', [title],
             function(err) {
-                callback(err, this?.lastID);
-            });
-    },
-    update: (id, description, status, callback) => {
-        db.get('SELECT status FROM tasks WHERE id = ?', [id], (err, row) => {
-            if (err) return callback(err, null);
-            if (!row) return callback(null, null);
-
-            const newStatus = status !== undefined ? status : row.status;
-
-            db.run(
-                'UPDATE tasks SET title=?, isCompleted=? WHERE id = ?', [description, newStatus, id],
-                function(err) {
+                if (err) {
+                    return callback(err, null);
+                }
+                db.get('SELECT * FROM tasks WHERE id = ?', [this.lastID], (err, row) => {
                     if (err) {
                         return callback(err, null);
                     }
-
-                    db.get('SELECT * FROM tasks WHERE id = ?', [id], (err, row) => {
-                        if (err) {
-                            return callback(err, null);
-                        }
-                        return callback(null, row);
-                    });
+                    return callback(null, row);
                 });
-        })
+            }
+        );
+    },
+    update: (taskData, callback) => {
+
+
+        db.get(
+            'SELECT isCompleted FROM tasks WHERE id = ?', [taskData.id], (err, task) => {
+                if (err) {
+                    callback(err, null);
+                }
+                else if (!task) {
+                    console.log('Task not found!')
+                    callback(null, null)
+                } else {
+
+                    let newStatus;
+
+                    if (taskData.isCompleted === undefined || taskData.isCompleted === null) {
+                        newStatus = task.isCompleted;
+                    }
+
+                    newStatus = taskData.isCompleted ? 1 : 0;
+
+                    db.run('UPDATE FROM tasks SET title=?, "isCompleted"=? WHERE id=?', [taskData.title, newStatus, taskData.id], (err, _) => {
+
+                        if (err) {
+                            callback(err, null)
+                        }
+
+                        db.get('SELECT * FROM tasks WHERE id = ?', [taskData.id], callback)
+                    })
+
+
+                }
+            }
+
+
+        )
+
+
+
+
     },
     delete: (id, callback) => {
         db.run(

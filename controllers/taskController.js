@@ -17,19 +17,23 @@ const listTasks = (_, res) => {
 
 const createTask = (req, res) => {
     const { title } = req.body;
-    TaskService.createTask(title, (err, id) => {
+    TaskService.createTask(title, (err, createdTask) => {
         if (err) {
             return res.status(400).json({ error: err.message });
         }
-        return res.status(201).json({ id, title, status: 0 });
+        return res.status(201).json(createdTask);
     });
 };
 
 const updateTask = (req, res) => {
     const { id } = req.params;
-    const { title, status } = req.body;
+    const { title, isCompleted } = req.body;
 
-    TaskService.updateTask(id, title, status, (err, updatedTask) => {
+    const taskData = {
+        id: Number(id), title, isCompleted
+    }
+
+    TaskService.updateTask(taskData, (err, updatedTask) => {
 
         if (err) {
             return res.status(500).json({ error: err.message });

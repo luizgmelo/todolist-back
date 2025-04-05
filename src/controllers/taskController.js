@@ -1,66 +1,57 @@
-import TaskService from '../services/taskService.js';
+import { openDB } from "../dbConfig.js";
 
-const listTasks = (_, res) => {
-    return TaskService.listTasks((err, rows) => {
-        if (err) {
-            return res.status(500).json({ message: err.message });
-        }
+export function testTask(req, res) {
+    res.status(200).json("Hello from tasks controller");
+}
 
-        const tasks = rows.map(task => ({
-            ...task,
-            isCompleted: Boolean(task.isCompleted)
-        }));
+export async function listTasks(req, res) {
+    const tasks = await openDB().then(db => db.all("SELECT * FROM tasks"));
 
-        return res.json(tasks);
-    });
+    // NOTE convert is_completed to boolean
+    res.json(tasks.map(task => {return {...task, isCompleted: task.isCompleted ? true : false}}));
 };
 
-const createTask = (req, res) => {
+export async function createTask(req, res) {
     const { title } = req.body;
-    TaskService.createTask(title, (err, createdTask) => {
-        if (err) {
-            return res.status(400).json({ error: err.message });
-        }
-        return res.status(201).json(createdTask);
-    });
+
+    const { lastID } = await openDB().then(db => db.run("INSERT INTO tasks (title) VALUES (?)", [title]));
+    const newTask = await openDB().then(db => db.get('SELECT * FROM tasks WHERE id = ?', [lastID]));
+
+    newTask.isCompleted = false;
+
+    res.status(201).json(newTask);
 };
 
-const updateTask = (req, res) => {
+
+export async function updateTask(req, res) {
     const { id } = req.params;
     const { title, isCompleted } = req.body;
 
-    const taskData = {
-        id: Number(id), title, isCompleted
+    const { changes } = await openDB().then(db => db.run('UPDATE tasks SET title = ?, isCompleted = ? WHERE id = ?', [title, isCompleted, id]));
+
+    if (changes === 0) {
+        res.status(404).json({
+            "message": "Task not found"
+        });
+    } else {
+        const task = await openDB().then(db => db.get('SELECT * FROM tasks WHERE id = ?', [id]));
+        task.isCompleted = task.isCompleted ? true : false;
+        res.json(task);
     }
+}
 
-    TaskService.updateTask(taskData, (err, updatedTask) => {
-
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-
-        if (!updatedTask) {
-            return res.status(404).json({ message: "Task not found!" });
-        }
-
-        return res.json(updatedTask);
-    });
-};
-
-const deleteTask = (req, res) => {
+export async function deleteTask(req, res) {
     const { id } = req.params;
+    
+    const { changes } = await openDB().then(db => db.run("DELETE FROM tasks WHERE id = ?", [id]));
 
-    TaskService.deleteTask(id, (err, changes) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
+    if (changes === 0) {
+        res.status(404).json({ 
+            "message": "Task not found!" 
+        })
+    } else {
+        res.status(204).send();
+    }
+}
 
-        if (changes === 0) {
-            return res.status(404).json({ message: "Task not found!" })
-        }
-
-        return res.json({ message: "Task delete successfully" });
-    });
-};
-
-export default { listTasks, createTask, updateTask, deleteTask };
+export default {testTask, listTasks, createTask, updateTask, deleteTask};

@@ -1,3 +1,4 @@
+import { type } from "os";
 import { openDB } from "../dbConfig.js";
 
 export function testTask(req, res) {
@@ -27,17 +28,37 @@ export async function updateTask(req, res) {
     const { id } = req.params;
     const { title, isCompleted } = req.body;
 
-    const { changes } = await openDB().then(db => db.run('UPDATE tasks SET title = ?, isCompleted = ? WHERE id = ?', [title, isCompleted, id]));
+    let fields = []
+    let values = [];
+
+    if (title?.length) {
+        fields.push('title = ?');
+        values.push(title);
+    }
+
+    if (typeof isCompleted === "boolean") {
+        fields.push('"isCompleted"= ?');
+        values.push(isCompleted);
+    }
+
+    if (fields.length === 0) {
+        return res.status(400).json({"message": "No data for update"});
+    }
+
+    const query = `UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`;
+    values.push(id);
+
+    const { changes } = await openDB().then(db => db.run(query, values));
 
     if (changes === 0) {
-        res.status(404).json({
+        return res.status(404).json({
             "message": "Task not found"
         });
-    } else {
-        const task = await openDB().then(db => db.get('SELECT * FROM tasks WHERE id = ?', [id]));
-        task.isCompleted = task.isCompleted ? true : false;
-        res.json(task);
-    }
+    } 
+
+    const task = await openDB().then(db => db.get('SELECT * FROM tasks WHERE id = ?', [id]));
+    task.isCompleted = task.isCompleted ? true : false;
+    res.json(task);
 }
 
 export async function deleteTask(req, res) {
